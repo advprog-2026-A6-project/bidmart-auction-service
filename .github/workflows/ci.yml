@@ -38,16 +38,17 @@ jobs:
           test -n "${{ vars.SONAR_ORG }}" || (echo "Missing SONAR_ORG variable" && exit 1)
           test -n "${{ vars.SONAR_PROJECT_KEY }}" || (echo "Missing SONAR_PROJECT_KEY variable" && exit 1)
 
-      - name: SonarCloud Scan (Gradle)
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_ORG: ${{ vars.SONAR_ORG }}
-          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
-        run: |
-          ./gradlew test jacocoTestReport sonar \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.organization=$SONAR_ORG \
-            -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+        with:
+          args: >
+            -Dsonar.organization=${{ vars.SONAR_ORG }}
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }}
+            -Dsonar.projectName=${{ env.SONAR_PROJECT_NAME }}
+            -Dsonar.java.binaries=build/classes
+            -Dsonar.junit.reportPaths=build/test-results/test
             -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml
 
       - name: SonarQube Quality Gate
