@@ -19,11 +19,5 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v3
 
-      - name: Build
-        run: ./gradlew clean build
-
-      - name: Tests
-        run: ./gradlew test
-
-      - name: Code quality
-        run: ./gradlew checkstyleMain spotbugsMain jacocoTestReport
+      - name: Build, Test, and Code Quality
+        run: ./gradlew clean checkstyleMain spotbugsMain jacocoTestReport check
