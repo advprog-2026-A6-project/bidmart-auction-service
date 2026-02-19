@@ -5,6 +5,7 @@ plugins {
     id("com.github.spotbugs") version "6.0.27"
     id("org.springframework.boot") version "3.5.10"
     id("io.spring.dependency-management") version "1.1.7"
+    id("org.sonarqube") version "6.0.1.5171"
 }
 
 group = "id.ac.ui.cs.advprog"
