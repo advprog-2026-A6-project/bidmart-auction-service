@@ -81,8 +81,14 @@ jobs:
         run: curl -fsSL -X POST "${{ secrets.STAGING_DEPLOY_HOOK_URL }}"
 
       - name: Optional staging smoke check
-        if: ${{ secrets.STAGING_HEALTHCHECK_URL != '' }}
-        run: curl -fsSL "${{ secrets.STAGING_HEALTHCHECK_URL }}"
+        env:
+          STAGING_HEALTHCHECK_URL: ${{ secrets.STAGING_HEALTHCHECK_URL }}
+        run: |
+          if [ -n "${STAGING_HEALTHCHECK_URL:-}" ]; then
+            curl -fsSL "${STAGING_HEALTHCHECK_URL}"
+          else
+            echo "Skip staging smoke check (secret not set)"
+          fi
 
   deploy-production:
     name: Deploy to production
@@ -101,8 +107,14 @@ jobs:
         run: curl -fsSL -X POST "${{ secrets.PRODUCTION_DEPLOY_HOOK_URL }}"
 
       - name: Optional production smoke check
-        if: ${{ secrets.PRODUCTION_HEALTHCHECK_URL != '' }}
-        run: curl -fsSL "${{ secrets.PRODUCTION_HEALTHCHECK_URL }}"
+        env:
+          PRODUCTION_HEALTHCHECK_URL: ${{ secrets.PRODUCTION_HEALTHCHECK_URL }}
+        run: |
+          if [ -n "${PRODUCTION_HEALTHCHECK_URL:-}" ]; then
+            curl -fsSL "${PRODUCTION_HEALTHCHECK_URL}"
+          else
+            echo "Skip production smoke check (secret not set)"
+          fi
 
   staging-status:
     name: Staging status (deploy on hold)
