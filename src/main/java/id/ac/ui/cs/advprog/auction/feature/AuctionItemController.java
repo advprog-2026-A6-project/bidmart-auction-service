@@ -1,5 +1,6 @@
-package id.ac.ui.cs.advprog.auction.dummy;
+package id.ac.ui.cs.advprog.auction.feature;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,52 +15,53 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
-public class DummyBidController {
+public class AuctionItemController {
 
-    private final DummyBidService dummyBidService;
+    private final AuctionItemService auctionItemService;
     private final String frontendStagingUrl;
     private final String backendStagingUrl;
     private final String databaseStagingUrl;
 
-    public DummyBidController(
-            DummyBidService dummyBidService,
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Spring manages singleton service lifecycle")
+    public AuctionItemController(
+            AuctionItemService auctionItemService,
             @Value("${staging.links.frontend-url:not-set}") String frontendStagingUrl,
             @Value("${staging.links.backend-url:not-set}") String backendStagingUrl,
             @Value("${staging.links.database-url:not-set}") String databaseStagingUrl) {
-        this.dummyBidService = dummyBidService;
+        this.auctionItemService = auctionItemService;
         this.frontendStagingUrl = frontendStagingUrl;
         this.backendStagingUrl = backendStagingUrl;
         this.databaseStagingUrl = databaseStagingUrl;
     }
 
-    @GetMapping("/api/dummy-bids")
+    @GetMapping("/api/items")
     @ResponseBody
-    public List<DummyBid> listDummyBids() {
-        return dummyBidService.getAllBids();
+    public List<AuctionItem> listItems() {
+        return auctionItemService.findAll();
     }
 
-    @GetMapping("/api/dummy-bids/{id}")
+    @GetMapping("/api/items/{id}")
     @ResponseBody
-    public DummyBid getDummyBidById(@PathVariable Long id) {
-        return dummyBidService.getBidById(id);
+    public AuctionItem getItem(@PathVariable Long id) {
+        return auctionItemService.findById(id);
     }
 
-    @PostMapping("/api/dummy-bids")
+    @PostMapping("/api/items")
     @ResponseBody
-    public DummyBid createDummyBid(@RequestBody DummyBid bid) {
-        return dummyBidService.createBid(bid);
+    public AuctionItem createItem(@RequestBody AuctionItem request) {
+        return auctionItemService.create(request);
     }
 
-    @PutMapping("/api/dummy-bids/{id}")
+    @PutMapping("/api/items/{id}")
     @ResponseBody
-    public DummyBid updateDummyBid(@PathVariable Long id, @RequestBody DummyBid bid) {
-        return dummyBidService.updateBid(id, bid);
+    public AuctionItem updateItem(@PathVariable Long id, @RequestBody AuctionItem request) {
+        return auctionItemService.update(id, request);
     }
 
-    @DeleteMapping("/api/dummy-bids/{id}")
+    @DeleteMapping("/api/items/{id}")
     @ResponseBody
-    public void deleteDummyBid(@PathVariable Long id) {
-        dummyBidService.deleteBid(id);
+    public void deleteItem(@PathVariable Long id) {
+        auctionItemService.delete(id);
     }
 
     @GetMapping("/api/staging-links")
@@ -71,12 +73,12 @@ public class DummyBidController {
                 "database", databaseStagingUrl);
     }
 
-    @GetMapping("/dummy-bids")
-    public String dummyBidPage(Model model) {
-        model.addAttribute("bids", dummyBidService.getAllBids());
+    @GetMapping("/items")
+    public String itemsPage(Model model) {
+        model.addAttribute("items", auctionItemService.findAll());
         model.addAttribute("frontendStagingUrl", frontendStagingUrl);
         model.addAttribute("backendStagingUrl", backendStagingUrl);
         model.addAttribute("databaseStagingUrl", databaseStagingUrl);
-        return "dummy-bids";
+        return "items";
     }
 }

@@ -1,4 +1,4 @@
-package id.ac.ui.cs.advprog.auction.dummy;
+package id.ac.ui.cs.advprog.auction.feature;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -18,30 +18,30 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class DummyBidIntegrationTest {
+class AuctionItemIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Test
-    void apiDummyBidsShouldReturnSeededDataFromDatabase() throws Exception {
-        mockMvc.perform(get("/api/dummy-bids"))
+    void listItemsShouldReturnSeedData() throws Exception {
+        mockMvc.perform(get("/api/items"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].bidderName").value("Alice"))
-                .andExpect(jsonPath("$[0].amount").value(150000));
+                .andExpect(jsonPath("$[0].name").exists())
+                .andExpect(jsonPath("$[0].startingPrice").exists());
     }
 
     @Test
-    void dummyBidsPageShouldRenderTemplateWithSeededData() throws Exception {
-        mockMvc.perform(get("/dummy-bids"))
+    void itemsPageShouldRenderFromDatabaseData() throws Exception {
+        mockMvc.perform(get("/items"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("Dummy Bid Dashboard")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Auction Items")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("not-set")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("Alice")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Gaming Laptop")));
     }
 
     @Test
-    void stagingLinksShouldUseSafeDefaultsWhenEnvIsMissing() throws Exception {
+    void stagingLinksShouldUseSafeDefaults() throws Exception {
         mockMvc.perform(get("/api/staging-links"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.frontend").value("not-set"))
@@ -50,42 +50,32 @@ class DummyBidIntegrationTest {
     }
 
     @Test
-    void createAndGetByIdShouldWork() throws Exception {
-        mockMvc.perform(post("/api/dummy-bids")
+    void crudApiShouldWork() throws Exception {
+        String createResponse = mockMvc.perform(post("/api/items")
                         .contentType(APPLICATION_JSON)
-                        .content("{\"bidderName\":\"Dora\",\"amount\":225000}"))
+                        .content("{\"name\":\"Wireless Mouse\",\"startingPrice\":350000}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.bidderName").value("Dora"))
-                .andExpect(jsonPath("$.amount").value(225000));
-
-        mockMvc.perform(get("/api/dummy-bids"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.bidderName == 'Dora')]").exists());
-    }
-
-    @Test
-    void updateAndDeleteShouldWork() throws Exception {
-        String body = mockMvc.perform(post("/api/dummy-bids")
-                        .contentType(APPLICATION_JSON)
-                        .content("{\"bidderName\":\"Eve\",\"amount\":130000}"))
-                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Wireless Mouse"))
+                .andExpect(jsonPath("$.startingPrice").value(350000))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
-        long createdId = JsonPath.read(body, "$.id");
 
-        mockMvc.perform(put("/api/dummy-bids/{id}", createdId)
+        Number idValue = JsonPath.read(createResponse, "$.id");
+        long id = idValue.longValue();
+
+        mockMvc.perform(put("/api/items/{id}", id)
                         .contentType(APPLICATION_JSON)
-                        .content("{\"bidderName\":\"Eve Updated\",\"amount\":140000}"))
+                        .content("{\"name\":\"Wireless Mouse Pro\",\"startingPrice\":420000}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.bidderName").value("Eve Updated"))
-                .andExpect(jsonPath("$.amount").value(140000));
+                .andExpect(jsonPath("$.name").value("Wireless Mouse Pro"))
+                .andExpect(jsonPath("$.startingPrice").value(420000));
 
-        mockMvc.perform(delete("/api/dummy-bids/{id}", createdId))
+        mockMvc.perform(delete("/api/items/{id}", id))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/dummy-bids/{id}", createdId))
+        mockMvc.perform(get("/api/items/{id}", id))
                 .andExpect(status().isNotFound());
     }
 }

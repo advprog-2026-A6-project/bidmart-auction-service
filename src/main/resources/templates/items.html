@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dummy Bid Dashboard</title>
+    <title>Auction Items</title>
 </head>
 <body>
-<h1>Dummy Bid Dashboard</h1>
-<p>Data below is fetched from backend service and persisted in database.</p>
-<h2>Staging Links (Placeholder)</h2>
+<h1>Auction Items</h1>
+<p>Frontend page rendered by backend with data fetched from database.</p>
+<h2>Staging Links</h2>
 <ul>
     <li>Frontend: <span th:text="${frontendStagingUrl}">not-set</span></li>
     <li>Backend: <span th:text="${backendStagingUrl}">not-set</span></li>
@@ -18,15 +18,15 @@
     <thead>
     <tr>
         <th>ID</th>
-        <th>Bidder</th>
-        <th>Amount</th>
+        <th>Name</th>
+        <th>Starting Price</th>
     </tr>
     </thead>
     <tbody>
-    <tr th:each="bid : ${bids}">
-        <td th:text="${bid.id}">1</td>
-        <td th:text="${bid.bidderName}">Alice</td>
-        <td th:text="${bid.amount}">150000</td>
+    <tr th:each="item : ${items}">
+        <td th:text="${item.id}">1</td>
+        <td th:text="${item.name}">Gaming Laptop</td>
+        <td th:text="${item.startingPrice}">12000000</td>
     </tr>
     </tbody>
 </table>
