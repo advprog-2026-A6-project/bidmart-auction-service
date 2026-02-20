@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ "staging", "main" ]
+    branches: [ "staging", "main", "mvp/initial-features" ]
   pull_request:
-    branches: [ "staging", "main" ]
+    branches: [ "staging", "main", "mvp/initial-features" ]
 
 permissions:
   contents: read
@@ -59,3 +59,97 @@ jobs:
             -Dsonar.java.binaries=build/classes
             -Dsonar.junit.reportPaths=build/test-results/test
             -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml
+
+  deploy-staging:
+    name: Deploy to staging
+    needs: build-test-lint-sonar
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging' && vars.ENABLE_STAGING_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+    steps:
+      - name: Validate staging deploy hook
+        run: |
+          set -euo pipefail
+          test -n "${{ secrets.STAGING_DEPLOY_HOOK_URL }}" || (echo "STAGING_DEPLOY_HOOK_URL is not set" && exit 1)
+
+      - name: Trigger staging deployment
+        run: curl -fsSL -X POST "${{ secrets.STAGING_DEPLOY_HOOK_URL }}"
+
+      - name: Optional staging smoke check
+        env:
+          STAGING_HEALTHCHECK_URL: ${{ secrets.STAGING_HEALTHCHECK_URL }}
+        run: |
+          if [ -n "${STAGING_HEALTHCHECK_URL:-}" ]; then
+            curl -fsSL "${STAGING_HEALTHCHECK_URL}"
+          else
+            echo "Skip staging smoke check (secret not set)"
+          fi
+
+  deploy-production:
+    name: Deploy to production
+    needs: build-test-lint-sonar
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.ENABLE_PRODUCTION_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - name: Validate production deploy hook
+        run: |
+          set -euo pipefail
+          test -n "${{ secrets.PRODUCTION_DEPLOY_HOOK_URL }}" || (echo "PRODUCTION_DEPLOY_HOOK_URL is not set" && exit 1)
+
+      - name: Trigger production deployment
+        run: curl -fsSL -X POST "${{ secrets.PRODUCTION_DEPLOY_HOOK_URL }}"
+
+      - name: Optional production smoke check
+        env:
+          PRODUCTION_HEALTHCHECK_URL: ${{ secrets.PRODUCTION_HEALTHCHECK_URL }}
+        run: |
+          if [ -n "${PRODUCTION_HEALTHCHECK_URL:-}" ]; then
+            curl -fsSL "${PRODUCTION_HEALTHCHECK_URL}"
+          else
+            echo "Skip production smoke check (secret not set)"
+          fi
+
+  staging-status:
+    name: Staging status (deploy on hold)
+    needs: build-test-lint-sonar
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    env:
+      FRONTEND_STAGING_URL: ${{ vars.FRONTEND_STAGING_URL }}
+      BACKEND_STAGING_URL: ${{ vars.BACKEND_STAGING_URL }}
+      DATABASE_STAGING_URL: ${{ vars.DATABASE_STAGING_URL }}
+    steps:
+      - name: Publish staging status note
+        run: |
+          {
+            echo "## Staging deployment status";
+            echo "- Deploy is currently on hold (AWS Student/Academy license request issue, update: 19 Feb 2026).";
+            echo "- Frontend staging link: ${FRONTEND_STAGING_URL:-not-set}";
+            echo "- Backend staging link: ${BACKEND_STAGING_URL:-not-set}";
+            echo "- Database staging link: ${DATABASE_STAGING_URL:-not-set}";
+            echo "- To re-enable deployment, set repository variable ENABLE_STAGING_DEPLOY=true.";
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  production-status:
+    name: Production status (deploy on hold)
+    needs: build-test-lint-sonar
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      FRONTEND_PRODUCTION_URL: ${{ vars.FRONTEND_PRODUCTION_URL }}
+      BACKEND_PRODUCTION_URL: ${{ vars.BACKEND_PRODUCTION_URL }}
+      DATABASE_PRODUCTION_URL: ${{ vars.DATABASE_PRODUCTION_URL }}
+    steps:
+      - name: Publish production status note
+        run: |
+          {
+            echo "## Production deployment status";
+            echo "- Deploy is currently on hold (AWS Student/Academy license request issue, update: 19 Feb 2026).";
+            echo "- Frontend production link: ${FRONTEND_PRODUCTION_URL:-not-set}";
+            echo "- Backend production link: ${BACKEND_PRODUCTION_URL:-not-set}";
+            echo "- Database production link: ${DATABASE_PRODUCTION_URL:-not-set}";
+            echo "- To re-enable deployment, set repository variable ENABLE_PRODUCTION_DEPLOY=true.";
+          } >> "$GITHUB_STEP_SUMMARY"

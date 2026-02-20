@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auction Items</title>
+</head>
+<body>
+<h1>Auction Items</h1>
+<p>Frontend page rendered by backend with data fetched from database.</p>
+<h2>Staging Links</h2>
+<ul>
+    <li>Frontend: <span th:text="${frontendStagingUrl}">not-set</span></li>
+    <li>Backend: <span th:text="${backendStagingUrl}">not-set</span></li>
+    <li>Database: <span th:text="${databaseStagingUrl}">not-set</span></li>
+</ul>
+<table border="1" cellpadding="8" cellspacing="0">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Starting Price</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="item : ${items}">
+        <td th:text="${item.id}">1</td>
+        <td th:text="${item.name}">Gaming Laptop</td>
+        <td th:text="${item.startingPrice}">12000000</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>
