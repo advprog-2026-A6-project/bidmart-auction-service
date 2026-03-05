@@ -10,6 +10,7 @@ import id.ac.ui.cs.advprog.auction.module.auction.model.Bid;
 import id.ac.ui.cs.advprog.auction.module.auction.repository.AuctionRepository;
 import id.ac.ui.cs.advprog.auction.module.auction.repository.BidRepository;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -81,9 +82,21 @@ public class AuctionService {
 
         Bid savedBid = bidRepository.save(bid);
         auction.setCurrentHighestBid(savedBid.getAmount());
+        applyLateBidExtension(auction, savedBid.getCreatedAt());
         auctionRepository.save(auction);
 
         return BidResponse.from(savedBid, auction.getCurrentHighestBid());
+    }
+
+    private void applyLateBidExtension(Auction auction, LocalDateTime bidTime) {
+        if (auction.getEndAt() == null) {
+            return;
+        }
+        Duration remaining = Duration.between(bidTime, auction.getEndAt());
+        if (!remaining.isNegative() && remaining.compareTo(Duration.ofMinutes(2)) <= 0) {
+            auction.setEndAt(bidTime.plusMinutes(2));
+            auction.setStatus(AuctionStatus.EXTENDED);
+        }
     }
 
     private BigDecimal minimumAllowedBid(Auction auction) {
