@@ -8,6 +8,7 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,6 +40,16 @@ public class AuctionController {
     @PostMapping
     public ResponseEntity<AuctionResponse> createAuction(@Valid @RequestBody CreateAuctionRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(auctionService.createDraft(request));
+    }
+
+    @GetMapping("/{id}")
+    public AuctionResponse getAuction(@PathVariable Long id) {
+        return auctionService.getById(id);
+    }
+
+    @PostMapping("/{id}/activate")
+    public AuctionResponse activateAuction(@PathVariable Long id) {
+        return auctionService.activate(id);
     }
 
     @GetMapping
