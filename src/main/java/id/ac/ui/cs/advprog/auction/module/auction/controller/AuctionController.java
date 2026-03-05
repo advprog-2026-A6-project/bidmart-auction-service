@@ -1,7 +1,9 @@
 package id.ac.ui.cs.advprog.auction.module.auction.controller;
 
 import id.ac.ui.cs.advprog.auction.module.auction.dto.AuctionResponse;
+import id.ac.ui.cs.advprog.auction.module.auction.dto.BidResponse;
 import id.ac.ui.cs.advprog.auction.module.auction.dto.CreateAuctionRequest;
+import id.ac.ui.cs.advprog.auction.module.auction.dto.PlaceBidRequest;
 import id.ac.ui.cs.advprog.auction.module.auction.service.AuctionService;
 import jakarta.validation.Valid;
 import java.util.Map;
@@ -50,6 +52,11 @@ public class AuctionController {
     @PostMapping("/{id}/activate")
     public AuctionResponse activateAuction(@PathVariable Long id) {
         return auctionService.activate(id);
+    }
+
+    @PostMapping("/{id}/bids")
+    public ResponseEntity<BidResponse> placeBid(@PathVariable Long id, @Valid @RequestBody PlaceBidRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(auctionService.placeBid(id, request));
     }
 
     @GetMapping

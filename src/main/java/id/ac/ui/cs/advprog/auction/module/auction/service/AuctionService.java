@@ -1,22 +1,30 @@
 package id.ac.ui.cs.advprog.auction.module.auction.service;
 
 import id.ac.ui.cs.advprog.auction.module.auction.dto.AuctionResponse;
+import id.ac.ui.cs.advprog.auction.module.auction.dto.BidResponse;
 import id.ac.ui.cs.advprog.auction.module.auction.dto.CreateAuctionRequest;
+import id.ac.ui.cs.advprog.auction.module.auction.dto.PlaceBidRequest;
 import id.ac.ui.cs.advprog.auction.module.auction.model.Auction;
 import id.ac.ui.cs.advprog.auction.module.auction.model.AuctionStatus;
+import id.ac.ui.cs.advprog.auction.module.auction.model.Bid;
 import id.ac.ui.cs.advprog.auction.module.auction.repository.AuctionRepository;
+import id.ac.ui.cs.advprog.auction.module.auction.repository.BidRepository;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class AuctionService {
 
     private final AuctionRepository auctionRepository;
+    private final BidRepository bidRepository;
 
-    public AuctionService(AuctionRepository auctionRepository) {
+    public AuctionService(AuctionRepository auctionRepository, BidRepository bidRepository) {
         this.auctionRepository = auctionRepository;
+        this.bidRepository = bidRepository;
     }
 
     public AuctionResponse createDraft(CreateAuctionRequest request) {
@@ -46,6 +54,43 @@ public class AuctionService {
         auction.setStatus(AuctionStatus.ACTIVE);
 
         return AuctionResponse.from(auctionRepository.save(auction));
+    }
+
+    @Transactional
+    public BidResponse placeBid(Long id, PlaceBidRequest request) {
+        Auction auction = findAuctionById(id);
+        if (auction.getStatus() != AuctionStatus.ACTIVE && auction.getStatus() != AuctionStatus.EXTENDED) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Bid is only allowed when auction is ACTIVE or EXTENDED"
+            );
+        }
+
+        BigDecimal minimumAllowed = minimumAllowedBid(auction);
+        if (request.getAmount().compareTo(minimumAllowed) <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Bid amount must be greater than " + minimumAllowed.stripTrailingZeros().toPlainString()
+            );
+        }
+
+        Bid bid = new Bid();
+        bid.setAuction(auction);
+        bid.setBidderName(request.getBidderName());
+        bid.setAmount(request.getAmount());
+
+        Bid savedBid = bidRepository.save(bid);
+        auction.setCurrentHighestBid(savedBid.getAmount());
+        auctionRepository.save(auction);
+
+        return BidResponse.from(savedBid, auction.getCurrentHighestBid());
+    }
+
+    private BigDecimal minimumAllowedBid(Auction auction) {
+        if (auction.getCurrentHighestBid() == null) {
+            return auction.getStartPrice();
+        }
+        return auction.getCurrentHighestBid().add(auction.getMinIncrement());
     }
 
     private Auction findAuctionById(Long id) {
