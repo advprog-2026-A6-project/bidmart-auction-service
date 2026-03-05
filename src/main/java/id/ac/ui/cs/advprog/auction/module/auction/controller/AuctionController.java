@@ -56,3 +56,5 @@ public class AuctionController {
         return auctionService.findBidsByAuctionId(id);
     }
 }
+
+// test
