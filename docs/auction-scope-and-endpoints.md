@@ -14,3 +14,4 @@
 
 ## Notes
 - Database configuration already exists in `application.yml` and supports local H2 by default.
+- Legacy item endpoints under `/api/items` are deprecated. New auction lifecycle and bidding development should use `/api/auctions`.

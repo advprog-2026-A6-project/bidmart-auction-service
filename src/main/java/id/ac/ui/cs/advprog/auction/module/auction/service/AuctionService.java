@@ -12,6 +12,7 @@ import id.ac.ui.cs.advprog.auction.module.auction.repository.BidRepository;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +42,13 @@ public class AuctionService {
 
     public AuctionResponse getById(Long id) {
         return AuctionResponse.from(findAuctionById(id));
+    }
+
+    public List<AuctionResponse> findAll() {
+        return auctionRepository.findAll()
+                .stream()
+                .map(AuctionResponse::from)
+                .toList();
     }
 
     public AuctionResponse activate(Long id) {
@@ -86,6 +94,14 @@ public class AuctionService {
         auctionRepository.save(auction);
 
         return BidResponse.from(savedBid, auction.getCurrentHighestBid());
+    }
+
+    public List<BidResponse> findBidsByAuctionId(Long id) {
+        findAuctionById(id);
+        return bidRepository.findByAuctionIdOrderByCreatedAtDesc(id)
+                .stream()
+                .map(bid -> BidResponse.from(bid, bid.getAmount()))
+                .toList();
     }
 
     private void applyLateBidExtension(Auction auction, LocalDateTime bidTime) {
