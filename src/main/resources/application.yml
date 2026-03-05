@@ -11,9 +11,9 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
 
-staging:
-  links:
-    frontend-url: ${FRONTEND_STAGING_URL:not-set}
-    backend-url: ${BACKEND_STAGING_URL:not-set}
-    database-url: ${DATABASE_STAGING_URL:not-set}
+server:
+  error:
+    include-stacktrace: never

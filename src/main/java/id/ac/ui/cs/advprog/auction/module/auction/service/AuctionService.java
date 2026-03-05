@@ -76,10 +76,11 @@ public class AuctionService {
         }
 
         BigDecimal minimumAllowed = minimumAllowedBid(auction);
-        if (request.getAmount().compareTo(minimumAllowed) <= 0) {
+        if (request.getAmount().compareTo(minimumAllowed) < 0) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Bid amount must be greater than " + minimumAllowed.stripTrailingZeros().toPlainString()
+                    "Bid amount must be greater than or equal to "
+                            + minimumAllowed.stripTrailingZeros().toPlainString()
             );
         }
 

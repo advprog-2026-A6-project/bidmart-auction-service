@@ -71,7 +71,7 @@ class AuctionLifecycleIntegrationTest {
                         .content("""
                                 {
                                   "bidderName": "Ishak",
-                                  "amount": 1000000
+                                  "amount": 999999
                                 }
                                 """))
                 .andExpect(status().isBadRequest());
