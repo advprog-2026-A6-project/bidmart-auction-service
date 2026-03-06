@@ -90,18 +90,28 @@ jobs:
   deploy-production:
     name: Deploy to production
     needs: build-test-lint-sonar
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.ENABLE_PRODUCTION_DEPLOY == 'true'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: production
     steps:
-      - name: Validate production deploy hook
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate Heroku deploy secrets
         run: |
           set -euo pipefail
-          test -n "${{ secrets.PRODUCTION_DEPLOY_HOOK_URL }}" || (echo "PRODUCTION_DEPLOY_HOOK_URL is not set" && exit 1)
+          test -n "${{ secrets.HEROKU_API_KEY }}" || (echo "HEROKU_API_KEY is not set" && exit 1)
+          test -n "${{ secrets.HEROKU_APP_NAME }}" || (echo "HEROKU_APP_NAME is not set" && exit 1)
 
-      - name: Trigger production deployment
-        run: curl -fsSL -X POST "${{ secrets.PRODUCTION_DEPLOY_HOOK_URL }}"
+      - name: Deploy to Heroku production
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+          HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
+        run: |
+          git push https://heroku:${HEROKU_API_KEY}@git.heroku.com/${HEROKU_APP_NAME}.git HEAD:refs/heads/main
 
       - name: Optional production smoke check
         env:
@@ -112,6 +122,32 @@ jobs:
           else
             echo "Skip production smoke check (secret not set)"
           fi
+
+  deploy-preview:
+    name: Deploy PR preview
+    needs: build-test-lint-sonar
+    if: github.event_name == 'pull_request' && github.base_ref == 'main' && vars.ENABLE_PR_PREVIEW_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: preview
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate Heroku preview deploy secrets
+        run: |
+          set -euo pipefail
+          test -n "${{ secrets.HEROKU_API_KEY }}" || (echo "HEROKU_API_KEY is not set" && exit 1)
+          test -n "${{ secrets.HEROKU_APP_NAME }}" || (echo "HEROKU_APP_NAME is not set" && exit 1)
+
+      - name: Deploy PR preview to Heroku
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+          HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
+        run: |
+          git push https://heroku:${HEROKU_API_KEY}@git.heroku.com/${HEROKU_APP_NAME}.git HEAD:refs/heads/main --force
 
   staging-status:
     name: Staging status (deploy on hold)
@@ -137,7 +173,7 @@ jobs:
   production-status:
     name: Production status (deploy on hold)
     needs: build-test-lint-sonar
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.ENABLE_PRODUCTION_DEPLOY != 'true'
     runs-on: ubuntu-latest
     env:
       FRONTEND_PRODUCTION_URL: ${{ vars.FRONTEND_PRODUCTION_URL }}
