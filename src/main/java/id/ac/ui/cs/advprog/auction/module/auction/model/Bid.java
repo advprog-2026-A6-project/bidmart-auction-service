@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.auction.module.auction.model;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -47,10 +48,18 @@ public class Bid {
         this.id = id;
     }
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP",
+            justification = "JPA entity relation is intentionally exposed for persistence mapping"
+    )
     public Auction getAuction() {
         return auction;
     }
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "JPA entity relation is intentionally assigned from managed persistence context"
+    )
     public void setAuction(Auction auction) {
         this.auction = auction;
     }
