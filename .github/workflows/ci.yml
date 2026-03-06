@@ -90,18 +90,28 @@ jobs:
   deploy-production:
     name: Deploy to production
     needs: build-test-lint-sonar
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.ENABLE_PRODUCTION_DEPLOY == 'true'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: production
     steps:
-      - name: Validate production deploy hook
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Heroku deploy secrets
         run: |
           set -euo pipefail
-          test -n "${{ secrets.PRODUCTION_DEPLOY_HOOK_URL }}" || (echo "PRODUCTION_DEPLOY_HOOK_URL is not set" && exit 1)
+          test -n "${{ secrets.HEROKU_API_KEY }}" || (echo "HEROKU_API_KEY is not set" && exit 1)
+          test -n "${{ secrets.HEROKU_APP_NAME }}" || (echo "HEROKU_APP_NAME is not set" && exit 1)
+          test -n "${{ secrets.HEROKU_EMAIL }}" || (echo "HEROKU_EMAIL is not set" && exit 1)
 
-      - name: Trigger production deployment
-        run: curl -fsSL -X POST "${{ secrets.PRODUCTION_DEPLOY_HOOK_URL }}"
+      - name: Deploy to Heroku production
+        uses: akhileshns/heroku-deploy@v3.14.15
+        with:
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
+          heroku_email: ${{ secrets.HEROKU_EMAIL }}
+          usedocker: false
 
       - name: Optional production smoke check
         env:
@@ -137,7 +147,7 @@ jobs:
   production-status:
     name: Production status (deploy on hold)
     needs: build-test-lint-sonar
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.ENABLE_PRODUCTION_DEPLOY != 'true'
     runs-on: ubuntu-latest
     env:
       FRONTEND_PRODUCTION_URL: ${{ vars.FRONTEND_PRODUCTION_URL }}
