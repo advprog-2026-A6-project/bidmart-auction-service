@@ -138,14 +138,14 @@ jobs:
         run: |
           set -euo pipefail
           test -n "${{ secrets.HEROKU_API_KEY }}" || (echo "HEROKU_API_KEY is not set" && exit 1)
-          test -n "${{ secrets.HEROKU_APP_NAME_PREVIEW }}" || (echo "HEROKU_APP_NAME_PREVIEW is not set" && exit 1)
+          test -n "${{ secrets.HEROKU_APP_NAME }}" || (echo "HEROKU_APP_NAME is not set" && exit 1)
           test -n "${{ secrets.HEROKU_EMAIL }}" || (echo "HEROKU_EMAIL is not set" && exit 1)
 
       - name: Deploy PR preview to Heroku
         uses: akhileshns/heroku-deploy@v3.14.15
         with:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name: ${{ secrets.HEROKU_APP_NAME_PREVIEW }}
+          heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
           heroku_email: ${{ secrets.HEROKU_EMAIL }}
           usedocker: false
 
