@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auction Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 24px;
+            color: #222;
+        }
+
+        h1 {
+            margin-bottom: 4px;
+        }
+
+        p {
+            margin-top: 0;
+            color: #555;
+        }
+
+        section {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            max-width: 760px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .row.one {
+            grid-template-columns: 1fr;
+        }
+
+        label {
+            display: block;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px;
+            border: 1px solid #bbb;
+            border-radius: 6px;
+        }
+
+        button {
+            padding: 8px 12px;
+            border: 0;
+            border-radius: 6px;
+            background: #1f4e79;
+            color: white;
+            cursor: pointer;
+        }
+
+        #msg {
+            margin-top: 8px;
+            color: #1f4e79;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+<h1>Auction Demo</h1>
+<p>Flow: create draft -> activate -> place bid.</p>
+
+<section>
+    <h3>Create Auction (DRAFT)</h3>
+    <div class="row">
+        <div>
+            <label for="title">Title</label>
+            <input id="title" placeholder="Laptop Gaming">
+        </div>
+        <div>
+            <label for="description">Description</label>
+            <input id="description" placeholder="Short description">
+        </div>
+        <div>
+            <label for="startPrice">Start Price</label>
+            <input id="startPrice" type="number" placeholder="1000000">
+        </div>
+        <div>
+            <label for="minIncrement">Min Increment</label>
+            <input id="minIncrement" type="number" placeholder="50000">
+        </div>
+    </div>
+    <div class="row one">
+        <div>
+            <label for="durationMinutes">Duration Minutes</label>
+            <input id="durationMinutes" type="number" placeholder="10">
+        </div>
+    </div>
+    <button onclick="createAuction()">Create</button>
+</section>
+
+<section>
+    <h3>Activate Auction</h3>
+    <div class="row one">
+        <div>
+            <label for="activateId">Auction ID</label>
+            <input id="activateId" type="number" placeholder="1">
+        </div>
+    </div>
+    <button onclick="activateAuction()">Activate</button>
+</section>
+
+<section>
+    <h3>Place Bid</h3>
+    <div class="row">
+        <div>
+            <label for="bidAuctionId">Auction ID</label>
+            <input id="bidAuctionId" type="number" placeholder="1">
+        </div>
+        <div>
+            <label for="bidderName">Bidder Name</label>
+            <input id="bidderName" placeholder="Ishak">
+        </div>
+        <div>
+            <label for="bidAmount">Bid Amount</label>
+            <input id="bidAmount" type="number" placeholder="1200000">
+        </div>
+    </div>
+    <button onclick="placeBid()">Place Bid</button>
+</section>
+
+<div id="msg">Ready.</div>
+
+<script>
+    async function api(url, method, body) {
+        const options = { method, headers: { "Content-Type": "application/json" } };
+        if (body) {
+            options.body = JSON.stringify(body);
+        }
+        const response = await fetch(url, options);
+        const text = await response.text();
+        document.getElementById("msg").textContent = `HTTP ${response.status}\n${text}`;
+    }
+
+    function createAuction() {
+        return api("/api/auctions", "POST", {
+            title: document.getElementById("title").value,
+            description: document.getElementById("description").value,
+            startPrice: Number(document.getElementById("startPrice").value),
+            minIncrement: Number(document.getElementById("minIncrement").value),
+            durationMinutes: Number(document.getElementById("durationMinutes").value)
+        });
+    }
+
+    function activateAuction() {
+        const id = document.getElementById("activateId").value;
+        return api(`/api/auctions/${id}/activate`, "POST");
+    }
+
+    function placeBid() {
+        const id = document.getElementById("bidAuctionId").value;
+        return api(`/api/auctions/${id}/bids`, "POST", {
+            bidderName: document.getElementById("bidderName").value,
+            amount: Number(document.getElementById("bidAmount").value)
+        });
+    }
+</script>
+</body>
+</html>
