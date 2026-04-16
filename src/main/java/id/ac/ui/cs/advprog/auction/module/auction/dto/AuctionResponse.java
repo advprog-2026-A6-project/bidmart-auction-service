@@ -11,7 +11,10 @@ public class AuctionResponse {
     private String description;
     private BigDecimal startPrice;
     private BigDecimal minIncrement;
+    private BigDecimal reservePrice;
     private BigDecimal currentHighestBid;
+    private BigDecimal winningBid;
+    private String winnerBidderName;
     private Integer durationMinutes;
     private LocalDateTime startAt;
     private LocalDateTime endAt;
@@ -24,7 +27,10 @@ public class AuctionResponse {
         response.setDescription(auction.getDescription());
         response.setStartPrice(auction.getStartPrice());
         response.setMinIncrement(auction.getMinIncrement());
+        response.setReservePrice(auction.getReservePrice());
         response.setCurrentHighestBid(auction.getCurrentHighestBid());
+        response.setWinningBid(auction.getWinningBid());
+        response.setWinnerBidderName(auction.getWinnerBidderName());
         response.setDurationMinutes(auction.getDurationMinutes());
         response.setStartAt(auction.getStartAt());
         response.setEndAt(auction.getEndAt());
@@ -72,12 +78,36 @@ public class AuctionResponse {
         this.minIncrement = minIncrement;
     }
 
+    public BigDecimal getReservePrice() {
+        return reservePrice;
+    }
+
+    public void setReservePrice(BigDecimal reservePrice) {
+        this.reservePrice = reservePrice;
+    }
+
     public BigDecimal getCurrentHighestBid() {
         return currentHighestBid;
     }
 
     public void setCurrentHighestBid(BigDecimal currentHighestBid) {
         this.currentHighestBid = currentHighestBid;
+    }
+
+    public BigDecimal getWinningBid() {
+        return winningBid;
+    }
+
+    public void setWinningBid(BigDecimal winningBid) {
+        this.winningBid = winningBid;
+    }
+
+    public String getWinnerBidderName() {
+        return winnerBidderName;
+    }
+
+    public void setWinnerBidderName(String winnerBidderName) {
+        this.winnerBidderName = winnerBidderName;
     }
 
     public Integer getDurationMinutes() {

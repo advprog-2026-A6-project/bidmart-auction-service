@@ -34,7 +34,16 @@ public class Auction {
     private BigDecimal minIncrement;
 
     @Column(precision = 19, scale = 2)
+    private BigDecimal reservePrice;
+
+    @Column(precision = 19, scale = 2)
     private BigDecimal currentHighestBid;
+
+    @Column(precision = 19, scale = 2)
+    private BigDecimal winningBid;
+
+    @Column
+    private String winnerBidderName;
 
     @Column(nullable = false)
     private Integer durationMinutes;
@@ -114,6 +123,30 @@ public class Auction {
 
     public void setCurrentHighestBid(BigDecimal currentHighestBid) {
         this.currentHighestBid = currentHighestBid;
+    }
+
+    public BigDecimal getReservePrice() {
+        return reservePrice;
+    }
+
+    public void setReservePrice(BigDecimal reservePrice) {
+        this.reservePrice = reservePrice;
+    }
+
+    public BigDecimal getWinningBid() {
+        return winningBid;
+    }
+
+    public void setWinningBid(BigDecimal winningBid) {
+        this.winningBid = winningBid;
+    }
+
+    public String getWinnerBidderName() {
+        return winnerBidderName;
+    }
+
+    public void setWinnerBidderName(String winnerBidderName) {
+        this.winnerBidderName = winnerBidderName;
     }
 
     public Integer getDurationMinutes() {
