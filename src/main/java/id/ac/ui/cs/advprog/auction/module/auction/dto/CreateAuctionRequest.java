@@ -21,6 +21,9 @@ public class CreateAuctionRequest {
     @DecimalMin(value = "0.01")
     private BigDecimal minIncrement;
 
+    @DecimalMin(value = "0.01")
+    private BigDecimal reservePrice;
+
     @NotNull
     @Positive
     private Integer durationMinutes;
@@ -55,6 +58,14 @@ public class CreateAuctionRequest {
 
     public void setMinIncrement(BigDecimal minIncrement) {
         this.minIncrement = minIncrement;
+    }
+
+    public BigDecimal getReservePrice() {
+        return reservePrice;
+    }
+
+    public void setReservePrice(BigDecimal reservePrice) {
+        this.reservePrice = reservePrice;
     }
 
     public Integer getDurationMinutes() {
