@@ -52,14 +52,14 @@ class AuctionLifecycleIntegrationTest {
         String response = mockMvc.perform(post("/api/auctions")
                         .contentType(APPLICATION_JSON)
                         .content("""
-                                {
-                                  "title": "Gaming PC",
-                                  "description": "RTX setup",
-                                  "startPrice": 1000000,
-                                  "minIncrement": 50000,
-                                  "reservePrice": %d,
-                                  "durationMinutes": %d
-                                }
+                                {%n\
+                                  "title": "Gaming PC",%n\
+                                  "description": "RTX setup",%n\
+                                  "startPrice": 1000000,%n\
+                                  "minIncrement": 50000,%n\
+                                  "reservePrice": %d,%n\
+                                  "durationMinutes": %d%n\
+                                }%n\
                                 """.formatted(reservePrice, durationMinutes)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("DRAFT"))
