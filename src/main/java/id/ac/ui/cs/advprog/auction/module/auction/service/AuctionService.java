@@ -30,23 +30,27 @@ public class AuctionService {
     }
 
     public AuctionResponse createDraft(CreateAuctionRequest request) {
+        validateReservePrice(request);
         Auction auction = new Auction();
         auction.setTitle(request.getTitle());
         auction.setDescription(request.getDescription());
         auction.setStartPrice(request.getStartPrice());
         auction.setMinIncrement(request.getMinIncrement());
+        auction.setReservePrice(request.getReservePrice());
         auction.setDurationMinutes(request.getDurationMinutes());
         auction.setStatus(AuctionStatus.DRAFT);
         return AuctionResponse.from(auctionRepository.save(auction));
     }
 
     public AuctionResponse getById(Long id) {
-        return AuctionResponse.from(findAuctionById(id));
+        Auction auction = finalizeAuctionIfExpired(findAuctionById(id));
+        return AuctionResponse.from(auction);
     }
 
     public List<AuctionResponse> findAll() {
         return auctionRepository.findAll()
                 .stream()
+                .map(this::finalizeAuctionIfExpired)
                 .map(AuctionResponse::from)
                 .toList();
     }
@@ -67,7 +71,7 @@ public class AuctionService {
 
     @Transactional
     public BidResponse placeBid(Long id, PlaceBidRequest request) {
-        Auction auction = findAuctionById(id);
+        Auction auction = finalizeAuctionIfExpired(findAuctionById(id));
         if (auction.getStatus() != AuctionStatus.ACTIVE && auction.getStatus() != AuctionStatus.EXTENDED) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
@@ -98,11 +102,21 @@ public class AuctionService {
     }
 
     public List<BidResponse> findBidsByAuctionId(Long id) {
-        findAuctionById(id);
+        finalizeAuctionIfExpired(findAuctionById(id));
         return bidRepository.findByAuctionIdOrderByCreatedAtDesc(id)
                 .stream()
                 .map(bid -> BidResponse.from(bid, bid.getAmount()))
                 .toList();
+    }
+
+    private void validateReservePrice(CreateAuctionRequest request) {
+        if (request.getReservePrice() != null
+                && request.getReservePrice().compareTo(request.getStartPrice()) < 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Reserve price must be greater than or equal to start price"
+            );
+        }
     }
 
     private void applyLateBidExtension(Auction auction, LocalDateTime bidTime) {
@@ -114,6 +128,38 @@ public class AuctionService {
             auction.setEndAt(bidTime.plusMinutes(2));
             auction.setStatus(AuctionStatus.EXTENDED);
         }
+    }
+
+    private Auction finalizeAuctionIfExpired(Auction auction) {
+        if (!isRunningAuction(auction) || auction.getEndAt() == null || auction.getEndAt().isAfter(LocalDateTime.now())) {
+            return auction;
+        }
+
+        return finalizeAuction(auction);
+    }
+
+    private Auction finalizeAuction(Auction auction) {
+        Bid highestBid = bidRepository.findTopByAuctionIdOrderByAmountDescCreatedAtAsc(auction.getId()).orElse(null);
+        if (highestBid == null || !hasMetReservePrice(auction, highestBid.getAmount())) {
+            auction.setStatus(AuctionStatus.UNSOLD);
+            auction.setWinningBid(null);
+            auction.setWinnerBidderName(null);
+            return auctionRepository.save(auction);
+        }
+
+        auction.setStatus(AuctionStatus.WON);
+        auction.setWinningBid(highestBid.getAmount());
+        auction.setWinnerBidderName(highestBid.getBidderName());
+        auction.setCurrentHighestBid(highestBid.getAmount());
+        return auctionRepository.save(auction);
+    }
+
+    private boolean isRunningAuction(Auction auction) {
+        return auction.getStatus() == AuctionStatus.ACTIVE || auction.getStatus() == AuctionStatus.EXTENDED;
+    }
+
+    private boolean hasMetReservePrice(Auction auction, BigDecimal amount) {
+        return auction.getReservePrice() == null || amount.compareTo(auction.getReservePrice()) >= 0;
     }
 
     private BigDecimal minimumAllowedBid(Auction auction) {
