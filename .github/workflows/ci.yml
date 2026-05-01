@@ -6,9 +6,9 @@ concurrency:
 
 on:
   push:
-    branches: [ "staging", "main" ]
+    branches: [ "staging", "main", "mvp/initial-features" ]
   pull_request:
-    branches: [ "staging", "main" ]
+    branches: [ "staging", "main", "mvp/initial-features" ]
 
 permissions:
   contents: read
