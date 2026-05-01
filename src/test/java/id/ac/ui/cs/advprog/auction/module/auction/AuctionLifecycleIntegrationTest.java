@@ -7,14 +7,26 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
+import id.ac.ui.cs.advprog.auction.module.auction.dto.PlaceBidRequest;
 import id.ac.ui.cs.advprog.auction.module.auction.model.AuctionStatus;
 import id.ac.ui.cs.advprog.auction.module.auction.repository.AuctionRepository;
+import id.ac.ui.cs.advprog.auction.module.auction.repository.BidRepository;
+import id.ac.ui.cs.advprog.auction.module.auction.service.AuctionService;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.server.ResponseStatusException;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -25,6 +37,12 @@ class AuctionLifecycleIntegrationTest {
 
     @Autowired
     private AuctionRepository auctionRepository;
+
+    @Autowired
+    private BidRepository bidRepository;
+
+    @Autowired
+    private AuctionService auctionService;
 
     private long createDraftAuction() throws Exception {
         String response = mockMvc.perform(post("/api/auctions")
@@ -241,5 +259,64 @@ class AuctionLifecycleIntegrationTest {
                 .andExpect(jsonPath("$.status").value("WON"))
                 .andExpect(jsonPath("$.winnerBidderName").value("Ishak"))
                 .andExpect(jsonPath("$.winningBid").value(1200000));
+    }
+
+    @Test
+    void concurrentBidsWithSameAmountShouldAcceptOnlyOneWinner() throws Exception {
+        long auctionId = createDraftAuction();
+
+        mockMvc.perform(post("/api/auctions/{id}/activate", auctionId))
+                .andExpect(status().isOk());
+
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            CountDownLatch ready = new CountDownLatch(2);
+            CountDownLatch start = new CountDownLatch(1);
+
+            Future<Integer> first = executor.submit(placeBidWhenReleased(auctionId, "Ishak", ready, start));
+            Future<Integer> second = executor.submit(placeBidWhenReleased(auctionId, "Sari", ready, start));
+
+            org.junit.jupiter.api.Assertions.assertTrue(ready.await(5, TimeUnit.SECONDS));
+            start.countDown();
+
+            List<Integer> statuses = List.of(first.get(5, TimeUnit.SECONDS), second.get(5, TimeUnit.SECONDS))
+                    .stream()
+                    .sorted()
+                    .toList();
+
+            org.junit.jupiter.api.Assertions.assertEquals(List.of(201, 400), statuses);
+        }
+
+        var bids = bidRepository.findByAuctionIdOrderByCreatedAtDesc(auctionId);
+        org.junit.jupiter.api.Assertions.assertEquals(1, bids.size());
+        org.junit.jupiter.api.Assertions.assertEquals(0, new BigDecimal("1200000").compareTo(bids.getFirst().getAmount()));
+
+        var auction = auctionRepository.findById(auctionId).orElseThrow();
+        org.junit.jupiter.api.Assertions.assertEquals(
+                0,
+                new BigDecimal("1200000").compareTo(auction.getCurrentHighestBid())
+        );
+    }
+
+    private Callable<Integer> placeBidWhenReleased(
+            long auctionId,
+            String bidderName,
+            CountDownLatch ready,
+            CountDownLatch start
+    ) {
+        return () -> {
+            PlaceBidRequest request = new PlaceBidRequest();
+            request.setBidderName(bidderName);
+            request.setAmount(new BigDecimal("1200000"));
+
+            ready.countDown();
+            org.junit.jupiter.api.Assertions.assertTrue(start.await(5, TimeUnit.SECONDS));
+
+            try {
+                auctionService.placeBid(auctionId, request);
+                return 201;
+            } catch (ResponseStatusException ex) {
+                return ex.getStatusCode().value();
+            }
+        };
     }
 }
