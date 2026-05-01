@@ -21,6 +21,9 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class AuctionService {
 
+    private static final Duration ANTI_SNIPING_EXTENSION = Duration.ofMinutes(2);
+    private static final Duration ANTI_SNIPING_WINDOW = Duration.ofMinutes(2);
+
     private final AuctionRepository auctionRepository;
     private final BidRepository bidRepository;
 
@@ -71,7 +74,7 @@ public class AuctionService {
 
     @Transactional
     public BidResponse placeBid(Long id, PlaceBidRequest request) {
-        Auction auction = finalizeAuctionIfExpired(findAuctionById(id));
+        Auction auction = finalizeAuctionIfExpired(findAuctionByIdForUpdate(id));
         if (auction.getStatus() != AuctionStatus.ACTIVE && auction.getStatus() != AuctionStatus.EXTENDED) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
@@ -124,8 +127,8 @@ public class AuctionService {
             return;
         }
         Duration remaining = Duration.between(bidTime, auction.getEndAt());
-        if (!remaining.isNegative() && remaining.compareTo(Duration.ofMinutes(2)) <= 0) {
-            auction.setEndAt(bidTime.plusMinutes(2));
+        if (!remaining.isNegative() && remaining.compareTo(ANTI_SNIPING_WINDOW) <= 0) {
+            auction.setEndAt(bidTime.plus(ANTI_SNIPING_EXTENSION));
             auction.setStatus(AuctionStatus.EXTENDED);
         }
     }
@@ -171,6 +174,11 @@ public class AuctionService {
 
     private Auction findAuctionById(Long id) {
         return auctionRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Auction not found"));
+    }
+
+    private Auction findAuctionByIdForUpdate(Long id) {
+        return auctionRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Auction not found"));
     }
 }

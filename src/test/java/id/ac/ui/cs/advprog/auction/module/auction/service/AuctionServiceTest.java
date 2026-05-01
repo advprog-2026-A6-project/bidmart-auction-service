@@ -106,7 +106,7 @@ class AuctionServiceTest {
 
     @Test
     void placeBidShouldRejectWhenAuctionNotActiveOrExtended() {
-        when(auctionRepository.findById(1L)).thenReturn(Optional.of(auction));
+        when(auctionRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(auction));
         PlaceBidRequest request = new PlaceBidRequest();
         request.setBidderName("A");
         request.setAmount(new BigDecimal("12000"));
@@ -119,7 +119,7 @@ class AuctionServiceTest {
     @Test
     void placeBidShouldRejectLowerThanMinimumAllowed() {
         auction.setStatus(AuctionStatus.ACTIVE);
-        when(auctionRepository.findById(1L)).thenReturn(Optional.of(auction));
+        when(auctionRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(auction));
         PlaceBidRequest request = new PlaceBidRequest();
         request.setBidderName("A");
         request.setAmount(new BigDecimal("9999"));
@@ -134,7 +134,7 @@ class AuctionServiceTest {
         auction.setStatus(AuctionStatus.ACTIVE);
         LocalDateTime bidTime = LocalDateTime.now();
         auction.setEndAt(bidTime.plusMinutes(1));
-        when(auctionRepository.findById(1L)).thenReturn(Optional.of(auction));
+        when(auctionRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(auction));
         when(bidRepository.save(any(Bid.class))).thenAnswer(invocation -> {
             Bid bid = invocation.getArgument(0);
             bid.setId(99L);
