@@ -42,6 +42,7 @@ public class AuctionService {
         auction.setReservePrice(request.getReservePrice());
         auction.setDurationMinutes(request.getDurationMinutes());
         auction.setStatus(AuctionStatus.DRAFT);
+        auction.setListingId(request.getListingId());
         return AuctionResponse.from(auctionRepository.save(auction));
     }
 

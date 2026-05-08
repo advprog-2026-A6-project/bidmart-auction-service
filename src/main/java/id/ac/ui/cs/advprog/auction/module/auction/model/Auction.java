@@ -12,6 +12,7 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "auctions")
@@ -61,6 +62,9 @@ public class Auction {
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(name = "listing_id", nullable = false)
+    private UUID listingId;
 
     @PrePersist
     public void onCreate() {
@@ -195,5 +199,13 @@ public class Auction {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public UUID getListingId() {
+        return listingId;
+    }
+
+    public void setListingId(UUID listingId) {
+        this.listingId = listingId;
     }
 }
