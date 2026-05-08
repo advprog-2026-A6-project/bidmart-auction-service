@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
+import java.util.UUID;
 
 public class CreateAuctionRequest {
 
@@ -27,6 +28,9 @@ public class CreateAuctionRequest {
     @NotNull
     @Positive
     private Integer durationMinutes;
+
+    @NotNull
+    private UUID listingId;
 
     public String getTitle() {
         return title;
@@ -74,5 +78,13 @@ public class CreateAuctionRequest {
 
     public void setDurationMinutes(Integer durationMinutes) {
         this.durationMinutes = durationMinutes;
+    }
+
+    public UUID getListingId() {
+        return listingId;
+    }
+
+    public void setListingId(UUID listingId) {
+        this.listingId = listingId;
     }
 }
